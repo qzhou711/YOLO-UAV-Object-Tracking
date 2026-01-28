@@ -1,105 +1,292 @@
-<!--
- * @Author: your name
- * @Date: 2020-10-26 17:59:59
- * @LastEditTime: 2025-04-02 23:52:09
- * @LastEditors: error: error: git config user.name & please set dead value or install git && error: git config user.email & please set dead value or install git & please set dead value or install git
- * @Description: In User Settings Edit
- * @FilePath: /yolov3_tensorrt/README.md
--->
+# YOLO-UAV-Object-Tracking
 
-# YOLOv3 TensorRT 目标检测项目
+🤖 **Real-time Object Detection and Tracking for UAV Applications**
 
-这是一个基于YOLOv3和TensorRT的目标检测项目，支持实时视频检测和目标跟踪。
-![yolo&yolo+sort](./sort.gif)
+[![Python 3.7+](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/)
+[![TensorRT](https://img.shields.io/badge/TensorRT-7.1+-green.svg)](https://developer.nvidia.com/tensorrt)
+[![Deep SORT](https://img.shields.io/badge/Deep-SORT-blue.svg)](https://github.com/nwojke/deep_sort)
+[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](LICENSE)
 
-## 项目结构
+## 📋 Overview
 
-```
-.
-├── common/          # 通用工具函数
-├── deep_sort/       # DeepSORT目标跟踪算法实现
-├── eval_yolo.py     # YOLO模型评估脚本
-├── plugins/         # TensorRT插件相关文件
-├── utils/          # 工具函数(可视化、预处理等)
-├── yolo/           # YOLO模型相关文件
-├── trt_yolo.py     # 基础目标检测实现
-├── trt_yolo_with_screen.py  # 带目标跟踪的检测实现
-└── setup.py        # 项目安装配置
-```
+This project implements **real-time object detection and tracking** for Unmanned Aerial Vehicles (UAVs) using:
 
-## 功能特点
+- **YOLOv3** for object detection
+- **TensorRT** for GPU-accelerated inference
+- **Deep SORT** for multi-object tracking
+- **Jetson NX** platform optimization
 
-- 支持YOLOv3目标检测
-- 使用TensorRT加速推理
-- 集成DeepSORT目标跟踪
-- 支持实时视频流处理
-- 支持图片和视频输入
-- 可视化检测和跟踪结果
+Designed for UAV applications including:
+- 🎯 Aerial surveillance and monitoring
+- 🔍 Infrastructure inspection
+- 🚁 Autonomous navigation
+- 📹 Real-time video analysis
 
-## 环境要求
+## 🚀 Quick Start
 
-- Python 2.7
-- CUDA
-- TensorRT 7.1.3.4
-- OpenCV
-- PyCUDA
-- ONNX 1.4.1
+### Prerequisites
 
-## 安装步骤
+- **Hardware**: NVIDIA Jetson NX or similar
+- **Software**: 
+  - Python 3.7+
+  - CUDA 11.0+
+  - TensorRT 7.1+
+  - OpenCV 4.0+
+  - PyCUDA
 
-1. 安装依赖包:
+### Installation
+
 ```bash
-# 安装protobuf
-bash install_protobuf-3.8.0.sh
+# Clone the repository
+git clone https://github.com/qzhou711/YOLO-UAV-Object-Tracking.git
+cd YOLO-UAV-Object-Tracking
 
-# 安装pycuda
-pip install pycuda==2019.1.1
+# Install Python dependencies
+pip install -r yolo/requirements.txt
 
-# 安装onnx
-sudo pip3 install onnx==1.4.1
-```
+# Install additional dependencies
+pip install pycuda==2019.1.1 onnx==1.4.1
 
-2. 编译项目:
-```bash
+# Compile TensorRT plugins
 cd plugins
 make
-```
 
-3. 生成TensorRT, 加速推理:
-```bash
-cd yolo
+# Generate TensorRT engine
+cd ../yolo
 bash darknet2onnx.sh
 bash onnx2trt.sh
 ```
 
-## 使用方法
+### Basic Usage
 
-1. 基础目标检测:
 ```bash
-python3 trt_yolo.py --image <image_path> -m yolov3-416
+# Image detection
+python trt_yolo.py --image path/to/image.jpg -m yolov3-416
+
+# Video detection with tracking
+python trt_yolo_with_screen.py --video path/to/video.mp4 -m yolov3-416
+
+# Camera input
+python trt_yolo.py --video 0 -m yolov3-416
 ```
 
-2. 视频检测(带目标跟踪):
-```bash
-python3 trt_yolo_with_screen.py --video <video_path> -m yolov3-416
+### Python API
+
+```python
+from utils.yolo_with_plugins import TrtYOLO
+from utils.visualization import BBoxVisualization
+import cv2
+
+# Initialize YOLO model
+model = TrtYOLO('yolov3-416', (416, 416), num_classes=1)
+
+# Load image
+img = cv2.imread('test.jpg')
+
+# Run detection
+boxes, confs, classes = model.detect(img, conf_thresh=0.3)
+
+# Visualize
+vis = BBoxVisualization(class_map)
+result = vis.draw_bboxes(img, boxes, confs, classes)
+cv2.imwrite('result.jpg', result)
 ```
 
-参数说明:
-- `-m/--model`: 模型名称，如yolov3-416
-- `-c/--category_num`: 目标类别数量
-- `--image`: 输入图片路径
-- `--video`: 输入视频路径
+## 📁 Project Structure
 
-## 注意事项
+```
+YOLO-UAV-Object-Tracking/
+├── trt_yolo.py                    # Main detection script
+├── trt_yolo_with_screen.py        # Detection with tracking visualization
+├── eval_yolo.py                   # Model evaluation script
+├── setup.py                       # Package setup
+│
+├── deep_sort/                     # Deep SORT tracking algorithm
+│   ├── sort.py                    # SORT tracker implementation
+│   ├── tracker.py                 # Deep SORT tracker
+│   ├── detection.py               # Detection class
+│   ├── kalman_filter.py           # Kalman filter for tracking
+│   ├── nn_matching.py             # Nearest neighbor matching
+│   ├── linear_assignment.py       # Hungarian algorithm
+│   └── iou_matching.py            # IoU-based matching
+│
+├── utils/                         # Utility functions
+│   ├── yolo_with_plugins.py       # YOLO with TensorRT plugins
+│   ├── yolo_classes.py            # Class name mappings
+│   ├── camera.py                  # Camera input handling
+│   ├── display.py                 # Window management
+│   ├── visualization.py           # Bounding box visualization
+│   └── preprocessing.py           # Image preprocessing
+│
+├── yolo/                          # YOLO model files
+│   ├── darknet2onnx/              # Darknet to ONNX conversion
+│   ├── onnx2trt/                  # ONNX to TensorRT conversion
+│   ├── requirements.txt           # Python dependencies
+│   └── README.md                  # YOLO module documentation
+│
+├── plugins/                       # TensorRT plugins
+│   ├── libyolo_layer.so           # Compiled plugin
+│   └── README.md
+│
+└── README.md                      # This file
+```
 
-1. 确保TensorRT引擎文件(.trt)已正确生成
-2. 视频处理时可按ESC键退出
-3. 按F键切换全屏显示
-4. 检测结果将保存为result_3.avi
+## 🏗️ Architecture
 
-## 许可证
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    YOLO-UAV-Object-Tracking                  │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐  │
+│  │   Input      │───>│   YOLOv3     │───>│   TensorRT   │  │
+│  │  (Video/Img) │    │   Detector   │    │  Optimized   │  │
+│  └──────────────┘    └──────────────┘    └──────────────┘  │
+│                           │                      │          │
+│                           v                      v          │
+│                    ┌──────────────┐    ┌──────────────┐   │
+│                    │   BBox       │    │   Deep SORT  │   │
+│                    │  Drawing     │<───│   Tracker    │   │
+│                    └──────────────┘    └──────────────┘   │
+│                           │                      │          │
+│                           v                      v          │
+│                    ┌──────────────────────────────────┐   │
+│                    │         Output Display            │   │
+│                    │  (BBoxes + Track IDs + FPS)       │   │
+│                    └──────────────────────────────────┘   │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
 
-MIT License
+## ⚙️ Configuration
 
+### Model Configuration
 
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `model` | yolov3-416 | YOLO model name (yolov3-416, yolov3-608) |
+| `category_num` | 1 | Number of object classes |
+| `conf_th` | 0.3 | Confidence threshold for detection |
+| `nms_th` | 0.5 | Non-Maximum Suppression threshold |
 
+### Supported Models
+
+- **yolov3-416**: 416x416 input, balanced speed/accuracy
+- **yolov3-608**: 608x608 input, higher accuracy
+
+## 📊 Performance
+
+Typical performance on Jetson NX:
+
+| Metric | Value |
+|--------|-------|
+| FPS | 15-30 |
+| Inference Time | 30-60ms |
+| Memory Usage | 2-4 GB |
+
+*Note: Performance varies based on model size and input resolution.*
+
+## 🎯 Supported Classes
+
+Default configuration supports:
+- Insulator detection (0: 'insulator')
+
+Modify `utils/yolo_classes.py` to add custom classes:
+
+```python
+CLASS_MAP = {
+    0: 'insulator',
+    1: 'person',
+    2: 'car',
+    3: 'drone',
+    # Add more classes...
+}
+```
+
+## 🔧 Advanced Usage
+
+### Deep SORT Tracking
+
+```python
+from deep_sort import DeepSortTracker
+from utils.yolo_with_plugins import TrtYOLO
+
+# Initialize
+yolo = TrtYOLO('yolov3-416', (416, 416), num_classes=1)
+tracker = DeepSortTracker(max_dist=0.2, max_iou_distance=0.7)
+
+# Process frame
+boxes, confs, classes = yolo.detect(frame, conf_thresh=0.3)
+tracks = tracker.update(boxes, confs, classes, frame)
+
+# Get track IDs
+for track in tracks:
+    track_id = track.track_id
+    bbox = track.bbox
+```
+
+### TensorRT Engine Generation
+
+```bash
+# Convert Darknet to ONNX
+cd yolo/darknet2onnx
+python yolo_to_onnx.py
+
+# Convert ONNX to TensorRT
+cd ../onnx2trt
+python onnx2trt.py -o yolov3.onnx -e yolov3.trt -p FP16
+```
+
+## 📝 Keyboard Controls
+
+| Key | Action |
+|-----|--------|
+| `ESC` | Quit program |
+| `F` | Toggle fullscreen |
+| Any key | Exit on key press |
+
+## ⚠️ Troubleshooting
+
+### Common Issues
+
+1. **CUDA out of memory**
+   - Reduce input resolution (use yolov3-416 instead of yolov3-608)
+   - Close other GPU processes
+
+2. **TensorRT engine not found**
+   - Generate engine: `bash yolo/darknet2onnx.sh && bash yolo/onnx2trt.sh`
+   - Check model path: `yolo/darknet/{model}.trt`
+
+3. **Camera not opening**
+   - Check camera index: try `--video 0` or `--video 1`
+   - Verify camera is connected and drivers installed
+
+### Performance Optimization
+
+- Use FP16 precision for faster inference
+- Enable TensorRT optimization
+- Reduce input resolution if needed
+- Use Jetson Power Mode 15W (MAXN)
+
+## 📚 References
+
+- [YOLOv3 Paper](https://arxiv.org/abs/1804.02767)
+- [TensorRT Documentation](https://docs.nvidia.com/deeplearning/tensorrt/)
+- [Deep SORT](https://github.com/nwojke/deep_sort)
+- [Jetson TX2/ NX](https://developer.nvidia.com/embedded/jetson-nx-developer-kit)
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit issues and pull requests.
+
+## 📧 Contact
+
+For questions or suggestions, please open an issue on GitHub.
+
+## 📄 License
+
+This project is licensed under the GPL v3 License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+**Note**: This project is designed for UAV (Drone) applications. Ensure compliance with local regulations when deploying for real-world use.
